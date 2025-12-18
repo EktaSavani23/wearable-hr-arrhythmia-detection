@@ -1,0 +1,10 @@
+# Data / processed artifacts (do not upload to GitHub)
+data/
+dataset/
+*.npz
+*.pth
+*.pt
+*.ckpt
+checkpoints/
+outputs/
+runs/
