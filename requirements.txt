@@ -1,0 +1,9 @@
+torch
+numpy
+scipy
+wfdb
+matplotlib
+scikit-learn
+tqdm
+fastapi
+pydantic

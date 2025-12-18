@@ -1,0 +1,694 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Wearable Arrhythmia + Heart Rate</title>
+  <style>
+    :root{
+      --bg: #0b0b0d;
+      --panel: #121214;
+      --panel2:#18181b;
+      --border: rgba(255,255,255,0.08);
+      --text: rgba(255,255,255,0.92);
+      --muted: rgba(255,255,255,0.66);
+      --muted2: rgba(255,255,255,0.50);
+      --green: #1DB954;
+      --good: #1DB954;
+      --warn: #fbbf24;
+      --bad:  #ff4d6d;
+      --shadow: 0 18px 60px rgba(0,0,0,0.55);
+      --radius: 18px;
+      --radius2: 22px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height: 100%; }
+    body{
+      margin:0;
+      font-family: var(--sans);
+      color: var(--text);
+      background:
+        radial-gradient(900px 520px at 30% 0%, rgba(29,185,84,0.15), transparent 60%),
+        radial-gradient(900px 520px at 80% 10%, rgba(29,185,84,0.08), transparent 60%),
+        var(--bg);
+      padding: 26px 14px 42px;
+    }
+
+    .wrap{ max-width: 1080px; margin: 0 auto; }
+
+    .hero{
+      display:flex;
+      align-items:center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 18px 18px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius2);
+      background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+      box-shadow: var(--shadow);
+    }
+    .heroLeft{ display:flex; flex-direction: column; gap: 4px; }
+    .heroTitle{ display:flex; gap: 10px; align-items: center; }
+    .logo{
+      width: 14px; height: 14px; border-radius: 999px;
+      background: var(--green);
+      box-shadow: 0 0 0 6px rgba(29,185,84,0.10);
+    }
+    h1{ margin:0; font-size: 18px; font-weight: 800; letter-spacing: 0.2px; }
+    .sub{ margin:0; color: var(--muted); font-size: 13px; }
+
+    .status{
+      display:flex; align-items: center; gap: 10px;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: rgba(255,255,255,0.04);
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    .dot{ width: 10px; height: 10px; border-radius: 999px; background: rgba(255,255,255,0.20); }
+    .dot.ok{ background: var(--good); box-shadow: 0 0 0 6px rgba(29,185,84,0.12); }
+    .dot.bad{ background: var(--bad); box-shadow: 0 0 0 6px rgba(255,77,109,0.12); }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1.15fr 1fr;
+      gap: 16px;
+      margin-top: 16px;
+    }
+    @media (max-width: 920px){ .grid{ grid-template-columns: 1fr; } }
+
+    .card{
+      background: linear-gradient(180deg, var(--panel), var(--panel2));
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+    }
+    .card h2{
+      margin: 0 0 12px;
+      font-size: 13px;
+      color: rgba(255,255,255,0.88);
+      text-transform: uppercase;
+      letter-spacing: 0.9px;
+    }
+    .row{ display:flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .field{ flex: 1; min-width: 260px; }
+
+    label{ display:block; color: var(--muted2); font-size: 12px; margin-bottom: 6px; }
+    input[type="text"], input[type="file"]{
+      width: 100%;
+      padding: 12px 12px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: rgba(0,0,0,0.28);
+      color: var(--text);
+      outline: none;
+    }
+    input[type="text"]{ font-family: var(--mono); font-size: 12px; }
+    input[type="text"]:focus, input[type="file"]:focus{
+      border-color: rgba(29,185,84,0.60);
+      box-shadow: 0 0 0 5px rgba(29,185,84,0.14);
+    }
+
+    .btn{
+      padding: 12px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      cursor:pointer;
+      font-weight: 800;
+      transition: transform 0.08s ease, background 0.2s ease, border-color 0.2s ease;
+      user-select: none;
+      white-space: nowrap;
+    }
+    .btn:hover{ background: rgba(255,255,255,0.10); }
+    .btn:active{ transform: translateY(1px); }
+    .btn.primary{
+      background: var(--green);
+      border-color: rgba(29,185,84,0.45);
+      color: #0b0b0d;
+    }
+
+    .hint{ margin-top: 10px; color: var(--muted); font-size: 13px; line-height: 1.45; }
+    .hint code{
+      font-family: var(--mono);
+      font-size: 12px;
+      color: rgba(255,255,255,0.90);
+      background: rgba(0,0,0,0.35);
+      border: 1px solid rgba(255,255,255,0.10);
+      padding: 2px 6px;
+      border-radius: 10px;
+    }
+
+    .resultTop{
+      display:flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .big{ display:flex; flex-direction: column; gap: 6px; min-width: 260px; }
+    .big .k{ color: var(--muted2); font-size: 12px; text-transform: uppercase; letter-spacing: 0.9px; }
+    .big .v{ font-size: 22px; font-weight: 900; letter-spacing: 0.2px; }
+
+    .pillRow{ display:flex; gap: 10px; flex-wrap: wrap; }
+    .pill{
+      display:inline-flex; align-items:center; gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.06);
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+    }
+    .pill strong{ color: var(--text); font-weight: 900; }
+
+    .bar{
+      width: 100%;
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.08);
+      overflow:hidden;
+      border: 1px solid rgba(255,255,255,0.10);
+      margin-top: 12px;
+    }
+    .bar > div{
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, rgba(29,185,84,0.95), rgba(29,185,84,0.60));
+      border-radius: 999px;
+      transition: width 0.6s ease;
+    }
+
+    .vizGrid{
+      display:grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 16px;
+      margin-top: 16px;
+    }
+    @media (max-width: 920px){ .vizGrid{ grid-template-columns: 1fr; } }
+
+    .vizTitle{
+      margin: 0 0 10px;
+      font-size: 12px;
+      letter-spacing: 0.9px;
+      color: rgba(255,255,255,0.86);
+      text-transform: uppercase;
+    }
+
+    canvas{
+      width: 100%;
+      height: 270px; /* slightly taller for nicer probability bars */
+      display:block;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(0,0,0,0.28);
+    }
+
+    .notice{ margin-top: 12px; color: var(--muted); font-size: 13px; }
+
+    details{
+      margin-top: 14px;
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 14px;
+      padding: 10px 12px;
+      background: rgba(0,0,0,0.18);
+    }
+    summary{ cursor:pointer; color: var(--muted); font-weight: 800; }
+    pre{
+      margin: 10px 0 0;
+      padding: 12px;
+      border-radius: 14px;
+      background: rgba(0,0,0,0.30);
+      border: 1px solid rgba(255,255,255,0.10);
+      color: rgba(255,255,255,0.90);
+      overflow:auto;
+      font-family: var(--mono);
+      font-size: 12px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .footer{ margin-top: 18px; text-align:center; color: rgba(255,255,255,0.45); font-size: 12px; }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+
+    <div class="hero">
+      <div class="heroLeft">
+        <div class="heroTitle">
+          <div class="logo"></div>
+          <h1>Wearable Arrhythmia + Heart Rate</h1>
+        </div>
+        <p class="sub">Dark cards • Green accent • FastAPI + PyTorch</p>
+      </div>
+
+      <div class="status">
+        <span class="dot" id="statusDot"></span>
+        <span id="statusText">API not checked</span>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2>Connection</h2>
+        <div class="row">
+          <div class="field">
+            <label>FastAPI Base URL</label>
+            <input id="apiBase" type="text" value="http://127.0.0.1:8001"/>
+          </div>
+          <button class="btn" onclick="checkHealth()">Check</button>
+        </div>
+
+        <div class="hint">
+          Start backend:
+          <br/>
+          <code>python -m uvicorn src.api_app:app --reload --host 127.0.0.1 --port 8001</code>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Upload</h2>
+        <div class="row">
+          <div class="field">
+            <label>Signal Window File (.npy or .csv)</label>
+            <input id="file" type="file" />
+          </div>
+          <button class="btn primary" onclick="sendFile()">Predict</button>
+        </div>
+        <div class="hint">
+          Tip: Use generated test files (e.g., <code>class0_*.npy</code>, <code>class4_*.npy</code>).
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <h2>Results</h2>
+
+      <div class="resultTop">
+        <div class="big">
+          <div class="k">Rhythm</div>
+          <div class="v" id="rhythmText">—</div>
+        </div>
+
+        <div class="pillRow">
+          <div class="pill" id="arrPill"><strong>Arrhythmia:</strong> —</div>
+          <div class="pill" id="hrPill"><strong>Heart Rate:</strong> —</div>
+          <div class="pill" id="confPill"><strong>Confidence:</strong> —</div>
+        </div>
+      </div>
+
+      <div class="bar"><div id="confBar"></div></div>
+
+      <div class="vizGrid">
+        <div>
+          <div class="vizTitle">Waveform (uploaded window)</div>
+          <canvas id="waveCanvas" width="1200" height="270"></canvas>
+        </div>
+        <div>
+          <div class="vizTitle">Probabilities (top classes)</div>
+          <canvas id="probCanvas" width="900" height="270"></canvas>
+        </div>
+      </div>
+
+      <div class="notice" id="msg">Upload a file and click Predict.</div>
+
+      <details>
+        <summary>Raw JSON (debug)</summary>
+        <pre id="raw">—</pre>
+      </details>
+    </div>
+
+    <div class="footer">Coursework demo • Localhost UI</div>
+  </div>
+
+<script>
+function API_BASE(){
+  return document.getElementById("apiBase").value.trim().replace(/\/+$/, "");
+}
+
+function setStatus(ok, text){
+  const dot = document.getElementById("statusDot");
+  const t = document.getElementById("statusText");
+  dot.className = "dot " + (ok ? "ok" : "bad");
+  t.textContent = text;
+}
+
+function setMsg(text, isError=false){
+  const el = document.getElementById("msg");
+  el.textContent = text;
+  el.style.color = isError ? "rgba(255,77,109,0.95)" : "rgba(255,255,255,0.66)";
+}
+
+function clearResult(){
+  document.getElementById("rhythmText").textContent = "—";
+  document.getElementById("arrPill").innerHTML = "<strong>Arrhythmia:</strong> —";
+  document.getElementById("hrPill").innerHTML  = "<strong>Heart Rate:</strong> —";
+  document.getElementById("confPill").innerHTML= "<strong>Confidence:</strong> —";
+  document.getElementById("confBar").style.width = "0%";
+  document.getElementById("raw").textContent = "—";
+  clearCanvases();
+}
+
+function clearCanvases(){
+  drawWaveform(null);
+  drawProbBars(null);
+}
+
+async function checkHealth(){
+  try{
+    setStatus(false, "Checking...");
+    const res = await fetch(`${API_BASE()}/health`);
+    const data = await res.json();
+    setStatus(true, "API OK");
+    setMsg("✅ Health check passed. Upload a file now.");
+    document.getElementById("raw").textContent = JSON.stringify(data, null, 2);
+  } catch(e){
+    setStatus(false, "API unreachable");
+    setMsg("❌ Health check failed. Start FastAPI and check URL/port.", true);
+  }
+}
+
+/* ---------- File reading for waveform ---------- */
+async function readFileAsFloatArray(file){
+  const name = file.name.toLowerCase();
+  if(name.endsWith(".csv")){
+    const text = await file.text();
+    const parts = text.trim().split(/[\s,]+/).filter(Boolean);
+    const arr = new Float32Array(parts.length);
+    for(let i=0;i<parts.length;i++) arr[i] = parseFloat(parts[i]);
+    return arr;
+  }
+  if(name.endsWith(".npy")){
+    const buf = await file.arrayBuffer();
+    return parseNpyFloat32(buf);
+  }
+  throw new Error("Please upload a .csv or .npy file");
+}
+
+/* Minimal .npy parser for float32/float64, C-order 1D */
+function parseNpyFloat32(buffer){
+  const u8 = new Uint8Array(buffer);
+  const magic = String.fromCharCode(...u8.slice(0,6));
+  if(magic !== "\x93NUMPY") throw new Error("Not a valid .npy file");
+  const major = u8[6];
+
+  let headerLen, offset;
+  if(major === 1){
+    headerLen = new DataView(buffer, 8, 2).getUint16(0, true);
+    offset = 10;
+  } else {
+    headerLen = new DataView(buffer, 8, 4).getUint32(0, true);
+    offset = 12;
+  }
+  const headerTxt = new TextDecoder("ascii").decode(u8.slice(offset, offset + headerLen));
+  const header = headerTxt.trim();
+
+  const descrMatch = header.match(/'descr':\s*'([^']+)'/);
+  const shapeMatch = header.match(/'shape':\s*\(([^)]+)\)/);
+  const fortranMatch = header.match(/'fortran_order':\s*(False|True)/);
+
+  if(!descrMatch || !shapeMatch) throw new Error("Unsupported .npy header");
+  const descr = descrMatch[1];
+  const fortran = fortranMatch ? (fortranMatch[1] === "True") : false;
+  if(fortran) throw new Error("Fortran order .npy not supported");
+
+  const shapeParts = shapeMatch[1].split(",").map(s => s.trim()).filter(s => s.length);
+  const n = parseInt(shapeParts[0], 10);
+  if(!Number.isFinite(n) || n <= 0) throw new Error("Invalid shape in .npy");
+
+  const dataStart = offset + headerLen;
+
+  if(descr.endsWith("f4")){
+    const out = new Float32Array(n);
+    const dv = new DataView(buffer, dataStart);
+    for(let i=0;i<n;i++) out[i] = dv.getFloat32(i*4, true);
+    return out;
+  }
+  if(descr.endsWith("f8")){
+    const out = new Float32Array(n);
+    const dv = new DataView(buffer, dataStart);
+    for(let i=0;i<n;i++) out[i] = dv.getFloat64(i*8, true);
+    return out;
+  }
+  throw new Error("Only float32/float64 .npy supported");
+}
+
+/* ---------- Canvas drawing ---------- */
+function drawWaveform(arr){
+  const c = document.getElementById("waveCanvas");
+  const ctx = c.getContext("2d");
+  const W = c.width, H = c.height;
+
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle = "rgba(0,0,0,0.28)";
+  ctx.fillRect(0,0,W,H);
+
+  ctx.strokeStyle = "rgba(255,255,255,0.08)";
+  ctx.lineWidth = 1;
+  for(let i=1;i<6;i++){
+    const y = (H*i)/6;
+    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke();
+  }
+  for(let i=1;i<10;i++){
+    const x = (W*i)/10;
+    ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke();
+  }
+
+  ctx.fillStyle = "rgba(255,255,255,0.55)";
+  ctx.font = "12px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace";
+  if(!arr || arr.length < 10){
+    ctx.fillText("No waveform loaded", 14, 22);
+    return;
+  }
+
+  const N = arr.length;
+  const step = Math.max(1, Math.floor(N / W));
+  let min = Infinity, max = -Infinity;
+  for(let i=0;i<N;i+=step){
+    const v = arr[i];
+    if(v<min) min=v;
+    if(v>max) max=v;
+  }
+  const range = (max-min) || 1;
+
+  ctx.strokeStyle = "rgba(29,185,84,0.95)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  for(let x=0, i=0; x<W && i<N; x++, i+=step){
+    const v = arr[i];
+    const y = H - ((v - min) / range) * H;
+    if(x===0) ctx.moveTo(x,y);
+    else ctx.lineTo(x,y);
+  }
+  ctx.stroke();
+
+  ctx.fillStyle = "rgba(255,255,255,0.65)";
+  ctx.fillText(`samples=${arr.length}  min=${min.toFixed(3)}  max=${max.toFixed(3)}`, 14, H-14);
+}
+
+/* ---- Improved Spotify-style probability panel (HiDPI, rounded track, pill %) ---- */
+function drawProbBars(top3){
+  const canvas = document.getElementById("probCanvas");
+  const ctx = canvas.getContext("2d");
+
+  // HiDPI
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  const cssW = rect.width;
+  const cssH = rect.height;
+
+  const needResize = canvas.width !== Math.round(cssW * dpr) || canvas.height !== Math.round(cssH * dpr);
+  if (needResize) {
+    canvas.width = Math.round(cssW * dpr);
+    canvas.height = Math.round(cssH * dpr);
+  }
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  const W = cssW, H = cssH;
+
+  function roundRectPath(x,y,w,h,r){
+    const rr = Math.min(r, w/2, h/2);
+    ctx.beginPath();
+    ctx.moveTo(x+rr, y);
+    ctx.arcTo(x+w, y,   x+w, y+h, rr);
+    ctx.arcTo(x+w, y+h, x,   y+h, rr);
+    ctx.arcTo(x,   y+h, x,   y,   rr);
+    ctx.arcTo(x,   y,   x+w, y,   rr);
+    ctx.closePath();
+  }
+
+  ctx.clearRect(0,0,W,H);
+  const bg = ctx.createLinearGradient(0,0,0,H);
+  bg.addColorStop(0, "rgba(0,0,0,0.20)");
+  bg.addColorStop(1, "rgba(0,0,0,0.35)");
+  ctx.fillStyle = bg;
+  roundRectPath(0,0,W,H,14);
+  ctx.fill();
+
+  const pad = 16;
+  ctx.fillStyle = "rgba(255,255,255,0.85)";
+  ctx.font = "700 13px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial";
+  ctx.fillText("Top probabilities", pad, 22);
+
+  ctx.fillStyle = "rgba(255,255,255,0.55)";
+  ctx.font = "12px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace";
+  ctx.fillText("Higher bar = more confident prediction", pad, 40);
+
+  if(!top3 || !top3.length){
+    ctx.fillStyle = "rgba(255,255,255,0.55)";
+    ctx.fillText("No probabilities yet", pad, 68);
+    return;
+  }
+
+  const items = top3.slice(0,3);
+  const startY = 62;
+  const rowH   = 58;
+  const barH   = 18;
+  const radius = 999;
+
+  const rightPillW = 74;
+  const trackX = pad;
+  const trackW = W - pad*2 - rightPillW - 10;
+
+  items.forEach((x, idx) => {
+    const pct = Math.max(0, Math.min(100, Number(x.percent || 0)));
+    const y0  = startY + idx * rowH;
+
+    // rank badge
+    const badgeX = pad;
+    const badgeY = y0 + 2;
+    ctx.fillStyle = "rgba(255,255,255,0.10)";
+    roundRectPath(badgeX, badgeY, 26, 22, 10);
+    ctx.fill();
+
+    ctx.fillStyle = "rgba(255,255,255,0.85)";
+    ctx.font = "800 12px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace";
+    ctx.fillText(String(idx+1), badgeX + 9, badgeY + 15);
+
+    // label
+    ctx.fillStyle = "rgba(255,255,255,0.90)";
+    ctx.font = "800 13px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial";
+    const name = x.name ?? "Class";
+    const label = (x.label !== undefined) ? `L${x.label}` : "";
+    ctx.fillText(`${name}${label ? "  ·  " + label : ""}`, pad + 34, y0 + 18);
+
+    // track
+    const ty = y0 + 30;
+    ctx.fillStyle = "rgba(255,255,255,0.10)";
+    roundRectPath(trackX, ty, trackW, barH, radius);
+    ctx.fill();
+
+    // fill
+    const fillW = Math.max(2, (pct/100) * trackW);
+    const grad = ctx.createLinearGradient(trackX, ty, trackX + trackW, ty);
+    if(idx === 0){
+      grad.addColorStop(0, "rgba(29,185,84,0.98)");
+      grad.addColorStop(1, "rgba(29,185,84,0.55)");
+    } else {
+      grad.addColorStop(0, "rgba(29,185,84,0.80)");
+      grad.addColorStop(1, "rgba(29,185,84,0.30)");
+    }
+
+    ctx.save();
+    ctx.shadowColor = "rgba(29,185,84,0.25)";
+    ctx.shadowBlur = (idx === 0) ? 10 : 6;
+    ctx.fillStyle = grad;
+    roundRectPath(trackX, ty, fillW, barH, radius);
+    ctx.fill();
+    ctx.restore();
+
+    // percent pill right
+    const pillX = trackX + trackW + 10;
+    const pillY = ty - 3;
+    ctx.fillStyle = "rgba(255,255,255,0.08)";
+    roundRectPath(pillX, pillY, rightPillW, barH + 6, 999);
+    ctx.fill();
+
+    ctx.fillStyle = "rgba(255,255,255,0.85)";
+    ctx.font = "900 12px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace";
+    ctx.fillText(`${pct.toFixed(2)}%`, pillX + 10, pillY + 17);
+  });
+}
+
+/* ---------- Predict ---------- */
+function renderResult(data){
+  document.getElementById("raw").textContent = JSON.stringify(data, null, 2);
+
+  if(!data){
+    setMsg("No response from API.", true);
+    return;
+  }
+  if(data.error){
+    clearResult();
+    setMsg("❌ " + data.error, true);
+    return;
+  }
+  if(!data.summary){
+    setMsg("⚠️ API response format not recognized. Check /predict_file output.", true);
+    return;
+  }
+
+  const s = data.summary;
+  const e = data.explanations || {};
+
+  document.getElementById("rhythmText").textContent = `${s.rhythm_prediction} (Label ${s.rhythm_label})`;
+
+  document.getElementById("arrPill").innerHTML = `<strong>Arrhythmia:</strong> ${s.arrhythmia_detected ? "YES" : "NO"}`;
+  document.getElementById("hrPill").innerHTML  = `<strong>Heart Rate:</strong> ${s.heart_rate_bpm} bpm (${s.heart_rate_category})`;
+
+  document.getElementById("confPill").innerHTML = `<strong>Confidence:</strong> ${s.confidence_percent}%`;
+  document.getElementById("confBar").style.width = `${Math.max(0, Math.min(100, s.confidence_percent))}%`;
+
+  const msg = (e.rhythm_message ? e.rhythm_message + " " : "") + (e.heart_rate_message ? e.heart_rate_message : "");
+  setMsg(msg || "Done.");
+
+  drawProbBars(data.top_3_classes);
+}
+
+async function sendFile(){
+  const f = document.getElementById("file").files[0];
+  if(!f){
+    setMsg("Choose a file first.", true);
+    return;
+  }
+
+  clearResult();
+  setMsg("⏳ Reading waveform...");
+  try{
+    const arr = await readFileAsFloatArray(f);
+    drawWaveform(arr);
+  } catch(err){
+    drawWaveform(null);
+    setMsg("⚠️ Could not plot waveform: " + err.message, true);
+  }
+
+  setMsg("⏳ Uploading and predicting...");
+
+  const fd = new FormData();
+  fd.append("file", f);
+
+  try{
+    const res = await fetch(`${API_BASE()}/predict_file`, { method:"POST", body: fd });
+    const data = await res.json();
+    renderResult(data);
+  } catch(e){
+    clearResult();
+    setMsg("❌ Fetch failed. Make sure FastAPI is running and API URL is correct.", true);
+  }
+}
+
+/* init visuals */
+clearCanvases();
+</script>
+</body>
+</html>
