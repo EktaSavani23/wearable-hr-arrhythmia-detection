@@ -1,5 +1,7 @@
 # Data / processed artifacts (do not upload to GitHub)
 data/
+binary_test_samples/
+results/
 dataset/
 *.npz
 *.pth
@@ -9,5 +11,3 @@ checkpoints/
 outputs/
 runs/
 .venv/
-binary_test_samples/
-results/
