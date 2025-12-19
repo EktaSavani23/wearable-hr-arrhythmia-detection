@@ -15,7 +15,7 @@ This repository contains a quality-aware deep learning pipeline for joint **hear
 - `src/` : training / dataset / model / evaluation code
 - `figures/` : report figures (PNG/PDF)
 - `results/` : experiment outputs (ignored by git)
-- `binary_test_samples/` : sample outputs (ignored by git)
+- `binary_test_samples/` : sample outputs
 - `data/` : datasets and processed artifacts (ignored by git)
 
 ## Setup (Windows)
