@@ -30,6 +30,15 @@ This repository contains a quality-aware deep learning pipeline for joint **hear
 Run from the project root:
 - `python -m src.main_train`
 
+## Running the API (FastAPI)
+> If your API file is `src/api_app.py`:
+- Start server:
+  - `python -m uvicorn src.api_app:app --reload --host 0.0.0.0 --port 8000`
+- Open Swagger UI:
+  - http://127.0.0.1:8000/docs
+
+> If your API file name is different, replace `src.api_app` with your module name (e.g., `src.api`).
+
 ## Evaluation outputs
 Evaluation typically reports:
 - **Classification:** Accuracy, Macro-F1, AUROC, Confusion Matrix
