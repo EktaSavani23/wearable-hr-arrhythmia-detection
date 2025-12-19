@@ -9,3 +9,5 @@ checkpoints/
 outputs/
 runs/
 .venv/
+binary_test_samples/
+results/
